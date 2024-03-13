@@ -22,6 +22,7 @@ public class RaycastShoot : MonoBehaviour
                 float distanceDiff = maxRange - hitInfo.distance;
                 float distanceRatio = distanceDiff/maxRange;
                 float calculatedDamage = damageCurve.Evaluate(distanceRatio) * damageAmount;
+                // IDamageable is an Interface you can create or replace with whatever damage script you're using
                 if(hitInfo.transform.TryGetComponent(out IDamageable damageable))
                 {
                     if(!totalDamageables.Contains(damageable)) totalDamageables.Add(damageable);
@@ -33,6 +34,7 @@ public class RaycastShoot : MonoBehaviour
 
         for (int i = 0; i < totalDamageables.Count; i++)
         {
+            // DamageSender is a struct that I used to consolidate the damage info, though you can just use function parameters instead
             DamageSender damageSender = new DamageSender(totalDamagePerDamageable[i], gameObject, DamageType.Projectile);
             totalDamageables[i].Damage(damageSender);
         }
