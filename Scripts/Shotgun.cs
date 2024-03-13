@@ -1,27 +1,15 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
-public class Shotgun : Weapon
+public class Shotgun : MonoBehaviour
 {
     private Camera mainCam;
     [SerializeField] private int numberOfShots;
     [SerializeField] private float spread;
     [SerializeField] private float maxRange;
     [SerializeField] private AnimationCurve damageCurve;
-    [SerializeField] private TextMeshProUGUI debugBox;
 
-    protected override void Setup()
+    protected void DealDamage()
     {
-        base.Setup();
-        mainCam = Camera.main;
-    }
-
-    protected override void DealDamage()
-    {
-        string textToDisplay = "";
-
         List<IDamageable> totalDamageables = new List<IDamageable>();
         float[] totalDamagePerDamageable = new float[numberOfShots];
 
@@ -37,8 +25,6 @@ public class Shotgun : Weapon
                 if(hitInfo.transform.TryGetComponent(out IDamageable damageable))
                 {
                     if(!totalDamageables.Contains(damageable)) totalDamageables.Add(damageable);
-                    if(i == 0) textToDisplay += $"Shot hit: {calculatedDamage}";
-                    else textToDisplay += $"\nShot hit: {calculatedDamage}";
                     totalDamagePerDamageable[totalDamageables.IndexOf(damageable)] += calculatedDamage;
                     Debug.DrawRay(hitInfo.point, hitInfo.normal * 2f, Color.red, 3f);
                 }
@@ -47,11 +33,8 @@ public class Shotgun : Weapon
 
         for (int i = 0; i < totalDamageables.Count; i++)
         {
-            textToDisplay += $"\nTotal damage for Damageable {i+1}: {totalDamagePerDamageable[i]}";
             DamageSender damageSender = new DamageSender(totalDamagePerDamageable[i], gameObject, DamageType.Projectile);
             totalDamageables[i].Damage(damageSender);
         }
-
-        debugBox.text = textToDisplay;
     }
 }
