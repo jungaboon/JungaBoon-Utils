@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Shotgun : MonoBehaviour
+public class RaycastShoot : MonoBehaviour
 {
     private Camera mainCam;
     [SerializeField] private int numberOfShots;
@@ -8,7 +8,7 @@ public class Shotgun : MonoBehaviour
     [SerializeField] private float maxRange;
     [SerializeField] private AnimationCurve damageCurve;
 
-    protected void DealDamage()
+    protected void Fire()
     {
         List<IDamageable> totalDamageables = new List<IDamageable>();
         float[] totalDamagePerDamageable = new float[numberOfShots];
