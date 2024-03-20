@@ -3,48 +3,75 @@ using System.Collections.Generic;
 using UnityEngine;
 using NaughtyAttributes;
 
+[System.Serializable]
+public struct LevelSegmentDirection
+{
+    public string name;
+    public LevelSegment[] segments;
+    public List<Vector2Int> validDirections;
+}
 public class LevelGenerator : MonoBehaviour
 {
     [SerializeField] private int segmentCount = 4;
-    [SerializeField] private List<LevelSegment> levelSegments = new List<LevelSegment>();
-
+    [SerializeField] private Vector3Int extents = new Vector3Int();
+    [SerializeField] private LevelSegmentDirection[] startSegments;
+    [SerializeField] private LevelSegmentDirection[] levelSegmentDirections;
+    [SerializeField] private List<Vector2Int> possibleDirections;
     private List<LevelSegment> currentSegments = new List<LevelSegment>();
-    public List<Vector3Int> currentPositions = new List<Vector3Int>();
 
     [Button]
     public void Generate()
     {
         Clear();
-        Vector3Int spawnPoint = Vector3Int.zero;
-        currentPositions.Add(spawnPoint);
+        // Initial spawn
+        Vector3Int spawnPos = Vector3Int.zero;
+        int randomStart = Random.Range(0,startSegments.Length);
+        LevelSegment startSegment = Instantiate(startSegments[randomStart].segments[Random.Range(0,startSegments[randomStart].segments.Length)], spawnPos, Quaternion.identity);
+        currentSegments.Add(startSegment);
 
-        Vector2Int exitDirection = Vector2Int.zero;
+        // Choose next spawn direction
+        int indexOfNextDirection = possibleDirections.IndexOf(possibleDirections[randomStart]);
+        Vector2Int transitionDirection = possibleDirections[indexOfNextDirection];
+        spawnPos += GetNextPos(transitionDirection, extents);
 
-        LevelSegment beginSegment = Instantiate(levelSegments[Random.Range(0, levelSegments.Count)], spawnPoint, Quaternion.LookRotation(Vector3.forward));
-        currentSegments.Add(beginSegment);
-
-        spawnPoint = beginSegment.GetNextPositionFromExit(spawnPoint, beginSegment.GetRandomAvailableExit());
-        exitDirection = beginSegment.CurrentExitDirection;
-
-        for (int i = 0; i < segmentCount-1; i++)
+        for (int i = 0; i < segmentCount; i++)
         {
-            Vector2Int entryDirection = -exitDirection;
-
-            List<LevelSegment> segmentsWithEntry = new List<LevelSegment>();
-            for (int j = 0; j < levelSegments.Count; j++)
+            List<Vector2Int> nextPossibleDirections = new List<Vector2Int>();
+            for (int j = 0; j < possibleDirections.Count; j++)
             {
-                if(levelSegments[j].HasValidEntry(entryDirection))
+                if(possibleDirections[j] != -transitionDirection) 
                 {
-                    segmentsWithEntry.Add(levelSegments[j]);
+                    nextPossibleDirections.Add(possibleDirections[j]);
                 }
             }
 
-            //Figure out what position to play the segment so that its next potential spawnpoint doesn't overlap with an existing tile
+            Vector2Int nextDirection = nextPossibleDirections[Random.Range(0,nextPossibleDirections.Count)];
+            List<Vector2Int> prevAndNextDirections = new List<Vector2Int>();
+            prevAndNextDirections.Add(-transitionDirection);
+            prevAndNextDirections.Add(nextDirection);
 
-            LevelSegment segment = Instantiate(segmentsWithEntry[Random.Range(0, segmentsWithEntry.Count)], spawnPoint, Quaternion.LookRotation(Vector3.forward));
-            spawnPoint = segment.GetNextPositionFromExit(spawnPoint, beginSegment.GetRandomAvailableExit());
-            currentPositions.Add(spawnPoint);
+            Debug.DrawRay(spawnPos, new Vector3(prevAndNextDirections[0].x, 0f, prevAndNextDirections[0].y) * 5f, Color.red, 5f);
+            Debug.DrawRay(spawnPos, new Vector3(prevAndNextDirections[1].x, 0f, prevAndNextDirections[1].y) * 5f, Color.green, 5f);
+            Debug.Log($"PrevDir: {prevAndNextDirections[0]} / NextDir: {prevAndNextDirections[1]}");
+
+            LevelSegment s = new LevelSegment();
+
+            // Get a segment that fits the criteria of having the same exit direction and same next direction
+            for (int k = 0; k < levelSegmentDirections.Length; k++)
+            {
+                if(ContainsList(levelSegmentDirections[k].validDirections, prevAndNextDirections))
+                {
+                    int index = Random.Range(0, levelSegmentDirections[k].segments.Length);
+                    s = levelSegmentDirections[k].segments[index];
+                    break;
+                }
+            }
+
+            LevelSegment segment = Instantiate(s, spawnPos, Quaternion.identity);
             currentSegments.Add(segment);
+            
+            spawnPos += GetNextPos(nextDirection, extents);
+            transitionDirection = nextDirection;
         }
     }
 
@@ -56,6 +83,19 @@ public class LevelGenerator : MonoBehaviour
             Destroy(currentSegments[i].gameObject);
         }
         currentSegments.Clear();
-        currentPositions.Clear();
+    }
+
+    private Vector3Int GetNextPos(Vector2Int direction, Vector3Int inputExtents)
+    {
+        return new Vector3Int(direction.x * inputExtents.x, 0, direction.y * inputExtents.z);
+    }
+
+    private bool ContainsList(List<Vector2Int> allDirections, List<Vector2Int> directionsToCheck)
+    {
+        for (int i = 0; i < directionsToCheck.Count; i++)
+        {
+            if(!allDirections.Contains(directionsToCheck[i])) return false;
+        }
+        return true;
     }
 }
