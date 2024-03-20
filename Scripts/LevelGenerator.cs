@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using NaughtyAttributes;
 
 [System.Serializable]
 public struct LevelSegmentDirection
@@ -19,7 +18,6 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private List<Vector2Int> possibleDirections;
     private List<LevelSegment> currentSegments = new List<LevelSegment>();
 
-    [Button]
     public void Generate()
     {
         Clear();
@@ -75,7 +73,6 @@ public class LevelGenerator : MonoBehaviour
         }
     }
 
-    [Button]
     public void Clear()
     {
         for (int i = 0; i < currentSegments.Count; i++)
