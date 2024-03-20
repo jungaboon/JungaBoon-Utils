@@ -5,53 +5,57 @@ using UnityEngine;
 public class LevelSegment : MonoBehaviour
 {
     [SerializeField] private MeshRenderer meshRenderer;
-    [SerializeField] private List<Vector2> transitionDirections = new List<Vector2>();
+    [SerializeField] private List<Vector2Int> transitionDirections = new List<Vector2Int>();
 
-    public Vector3 GetExtents {get{return meshRenderer.bounds.extents;}}
-    public Vector2 CurrentExitDirection;
+    public Vector3Int GetExtents {get{return Vector3Int.RoundToInt(meshRenderer.bounds.extents);}}
+    public Vector2Int CurrentExitDirection;
 
-    public bool IsValid(Vector3 startPos, Vector2 entryDir, List<Vector3> currentPositions)
+    public bool HasValidEntry(Vector2Int entryDir)
     {
-        Vector3 nextPos = GetNextPosition(startPos, entryDir);
-        for (int i = 0; i < currentPositions.Count; i++)
-        {
-            if(nextPos == currentPositions[i]) return false;
-        }
-        return HasEntryDirection(entryDir);
+        return transitionDirections.Contains(entryDir);
     }
-    
-    public bool HasEntryDirection(Vector2 entryDirection)
+
+    // The issue seems to be here
+    // The Extents for anything after the initial spawn returns 0 for some reason
+    public Vector3Int GetNextPositionFromExit(Vector3Int startPos, Vector2Int exitDir)
     {
+        CurrentExitDirection = exitDir;
+        Vector3Int addedDir = new Vector3Int(exitDir.x * GetExtents.x * 2, 0, exitDir.y * GetExtents.z * 2);
+        Debug.Log($"Extents : {GetExtents} / Added Dir: {addedDir}");
+        Vector3Int returnedPos = startPos + addedDir;
+        return returnedPos;
+    }
+
+
+    public List<Vector2Int> GetAllAvailableExits(Vector2Int entryDir)
+    {
+        List<Vector2Int> availableExitDirs = new List<Vector2Int>();
         for (int i = 0; i < transitionDirections.Count; i++)
         {
-            if(entryDirection == transitionDirections[i]) return false;
+            if(transitionDirections[i] != entryDir) availableExitDirs.Add(transitionDirections[i]);
         }
-        return true;
+        return availableExitDirs;
     }
-    
-    public Vector3 GetNextPosition(Vector3 startPos, Vector2 entryDirection)
+
+    public Vector2Int GetRandomAvailableExit()
     {
-        Vector2 v_possible = GetPossibleDirections(entryDirection);
-        CurrentExitDirection = -v_possible;
-        
-        Vector3 returnPos = startPos + new Vector3(v_possible.x * GetExtents.x * 2f, 0f, v_possible.y * GetExtents.z * 2f);
-        returnPos = Vector3Int.RoundToInt(returnPos);
-        return returnPos;
+        Vector2Int chosenExit = transitionDirections[Random.Range(0,transitionDirections.Count)];
+        CurrentExitDirection = chosenExit;
+        return chosenExit;
     }
-    
-    public Vector2 GetPossibleDirections(Vector2 entryDirection)
+
+    public Vector2Int GetRandomAvailableExit(Vector2Int entryDir)
     {
-        List<Vector2> availableDirections = new List<Vector2>();
+        // We have to exclude the entry direction from possible exits
+        // since we don't want to spawn the next segment in an overlapping spot
+        List<Vector2Int> availableExitDirs = new List<Vector2Int>();
         for (int i = 0; i < transitionDirections.Count; i++)
         {
-            if(transitionDirections[i] != entryDirection) availableDirections.Add(transitionDirections[i]);
+            if(transitionDirections[i] != entryDir) availableExitDirs.Add(transitionDirections[i]);
         }
-
-        return availableDirections[Random.Range(0,availableDirections.Count)];
-    } 
-    
-    public Vector2 GetPossibleDirections()
-    {
-        return transitionDirections[Random.Range(0,transitionDirections.Count)];
+        Vector2Int chosenExit = availableExitDirs[Random.Range(0,availableExitDirs.Count)];
+        CurrentExitDirection = chosenExit;
+        Debug.Log("Chosen exit: "+chosenExit);
+        return chosenExit;
     }
 }

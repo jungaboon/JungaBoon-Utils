@@ -6,55 +6,45 @@ using NaughtyAttributes;
 public class LevelGenerator : MonoBehaviour
 {
     [SerializeField] private int segmentCount = 4;
-    [SerializeField] private LevelSegment[] levelSegments;
+    [SerializeField] private List<LevelSegment> levelSegments = new List<LevelSegment>();
 
     private List<LevelSegment> currentSegments = new List<LevelSegment>();
-    public List<Vector3> currentPositions = new List<Vector3>();
+    public List<Vector3Int> currentPositions = new List<Vector3Int>();
 
     [Button]
     public void Generate()
     {
         Clear();
-        Vector3 spawnPoint = Vector3.zero;
+        Vector3Int spawnPoint = Vector3Int.zero;
         currentPositions.Add(spawnPoint);
 
-        Vector2 exitDirection = Vector2.zero;
+        Vector2Int exitDirection = Vector2Int.zero;
 
-        LevelSegment beginSegment = Instantiate(levelSegments[Random.Range(0, levelSegments.Length)], spawnPoint, Quaternion.LookRotation(Vector3.forward));
+        LevelSegment beginSegment = Instantiate(levelSegments[Random.Range(0, levelSegments.Count)], spawnPoint, Quaternion.LookRotation(Vector3.forward));
         currentSegments.Add(beginSegment);
 
-        spawnPoint = beginSegment.GetNextPosition(spawnPoint, Vector2.zero);
+        spawnPoint = beginSegment.GetNextPositionFromExit(spawnPoint, beginSegment.GetRandomAvailableExit());
         exitDirection = beginSegment.CurrentExitDirection;
 
-        for (int i = 0; i <= segmentCount; i++)
+        for (int i = 0; i < segmentCount-1; i++)
         {
-            Vector2 entryDirection = Vector2.zero;
-            entryDirection = -exitDirection;
-
-            int attempts = 100;
+            Vector2Int entryDirection = -exitDirection;
 
             List<LevelSegment> segmentsWithEntry = new List<LevelSegment>();
-            for (int j = 0; j < levelSegments.Length; j++)
+            for (int j = 0; j < levelSegments.Count; j++)
             {
-                if(levelSegments[j].HasEntryDirection(entryDirection)) segmentsWithEntry.Add(levelSegments[j]);
+                if(levelSegments[j].HasValidEntry(entryDirection))
+                {
+                    segmentsWithEntry.Add(levelSegments[j]);
+                }
             }
 
-            LevelSegment valid_s = segmentsWithEntry[Random.Range(0,segmentsWithEntry.Count
-            )];
+            //Figure out what position to play the segment so that its next potential spawnpoint doesn't overlap with an existing tile
 
-            while(attempts > 0 && !valid_s.IsValid(spawnPoint, entryDirection, currentPositions))
-            {
-                valid_s = levelSegments[Random.Range(0,levelSegments.Length)];
-                attempts --;
-            }
-
-            LevelSegment segment = Instantiate(valid_s, spawnPoint, Quaternion.LookRotation(Vector3.forward));
-
+            LevelSegment segment = Instantiate(segmentsWithEntry[Random.Range(0, segmentsWithEntry.Count)], spawnPoint, Quaternion.LookRotation(Vector3.forward));
+            spawnPoint = segment.GetNextPositionFromExit(spawnPoint, beginSegment.GetRandomAvailableExit());
             currentPositions.Add(spawnPoint);
             currentSegments.Add(segment);
-
-            spawnPoint = segment.GetNextPosition(spawnPoint, entryDirection);
-            exitDirection = segment.CurrentExitDirection;
         }
     }
 
