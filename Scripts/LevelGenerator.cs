@@ -6,7 +6,7 @@ using UnityEngine;
 public struct LevelSegmentDirection
 {
     public string name;
-    public LevelSegment[] segments;
+    public GameObject[] segments;
     public List<Vector2Int> validDirections;
 }
 public class LevelGenerator : MonoBehaviour
@@ -16,7 +16,7 @@ public class LevelGenerator : MonoBehaviour
     [SerializeField] private LevelSegmentDirection[] startSegments;
     [SerializeField] private LevelSegmentDirection[] levelSegmentDirections;
     [SerializeField] private List<Vector2Int> possibleDirections;
-    private List<LevelSegment> currentSegments = new List<LevelSegment>();
+    private List<GameObject> currentSegments = new List<GameObject>();
 
     public void Generate()
     {
@@ -24,7 +24,7 @@ public class LevelGenerator : MonoBehaviour
         // Initial spawn
         Vector3Int spawnPos = Vector3Int.zero;
         int randomStart = Random.Range(0,startSegments.Length);
-        LevelSegment startSegment = Instantiate(startSegments[randomStart].segments[Random.Range(0,startSegments[randomStart].segments.Length)], spawnPos, Quaternion.identity);
+        GameObject startSegment = Instantiate(startSegments[randomStart].segments[Random.Range(0,startSegments[randomStart].segments.Length)], spawnPos, Quaternion.identity);
         currentSegments.Add(startSegment);
 
         // Choose next spawn direction
@@ -52,7 +52,7 @@ public class LevelGenerator : MonoBehaviour
             Debug.DrawRay(spawnPos, new Vector3(prevAndNextDirections[1].x, 0f, prevAndNextDirections[1].y) * 5f, Color.green, 5f);
             Debug.Log($"PrevDir: {prevAndNextDirections[0]} / NextDir: {prevAndNextDirections[1]}");
 
-            LevelSegment s = new LevelSegment();
+            GameObject s = new GameObject();
 
             // Get a segment that fits the criteria of having the same exit direction and same next direction
             for (int k = 0; k < levelSegmentDirections.Length; k++)
@@ -65,7 +65,7 @@ public class LevelGenerator : MonoBehaviour
                 }
             }
 
-            LevelSegment segment = Instantiate(s, spawnPos, Quaternion.identity);
+            GameObject segment = Instantiate(s, spawnPos, Quaternion.identity);
             currentSegments.Add(segment);
             
             spawnPos += GetNextPos(nextDirection, extents);
